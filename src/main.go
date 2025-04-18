@@ -17,9 +17,9 @@ import (
 )
 
 type InputUrl struct {
-	Url         string     `json:"url" binding:"required,url"`
-	CustomAlias string     `json:"customAlias"`
-	ExpiresAt   *time.Time `json:"expiresAt"`
+	URL         string     `json:"url" binding:"required,url"`
+	CustomAlias string     `json:"custom_alias" binding:"omitempty,alphanum,min=3,max=6"`
+	ExpiresAt   *time.Time `json:"expires_at" binding:"omitempty,gt=now"`
 }
 
 func isValidURL(urlStr string) bool {
@@ -49,11 +49,11 @@ func main() {
 	router.POST("/generate", func(c *gin.Context) {
 		var inputUrl InputUrl
 		if err := c.ShouldBindJSON(&inputUrl); err != nil {
-			validation.HandleValidationErrors(c, err)
+			validation.HandleValidationErrors(c, err, inputUrl)
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"status": "success", "url": inputUrl.Url})
+		c.JSON(http.StatusOK, gin.H{"status": "success", "url": inputUrl.URL})
 	})
 
 	server := &http.Server{

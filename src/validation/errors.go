@@ -3,7 +3,6 @@ package validation
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"reflect"
 	"strings"
@@ -47,38 +46,38 @@ func getFieldLocation(c *gin.Context, fieldName string) string {
 	return "request"
 }
 
+// getJSONFieldName gets the JSON field name from the struct field
+func getJSONFieldName(structType reflect.Type, fieldName string) string {
+	field, found := structType.FieldByName(fieldName)
+	if !found {
+		return fieldName
+	}
+
+	jsonTag := field.Tag.Get("json")
+	if jsonTag == "" {
+		return fieldName
+	}
+
+	// Handle cases where json tag might have options like `json:"field,omitempty"`
+	if commaIdx := strings.Index(jsonTag, ","); commaIdx != -1 {
+		return jsonTag[:commaIdx]
+	}
+
+	return jsonTag
+}
+
 // formatValidationErrors converts validator errors into a more readable format
-func formatValidationErrors(c *gin.Context, err error) []ValidationError {
+func formatValidationErrors(c *gin.Context, err error, inputType interface{}) []ValidationError {
 	var validationErrors []ValidationError
+	structType := reflect.TypeOf(inputType)
 
 	// Try to convert to validator.ValidationErrors
 	var ve validator.ValidationErrors
 	if errors.As(err, &ve) {
 		for _, e := range ve {
-			// Debug logging for validation error
-			log.Println("Validation Error Details:")
-			log.Printf("Type: %T\n", e)
-			log.Printf("Field: %s\n", e.Field())
-			log.Printf("Tag: %s\n", e.Tag())
-			log.Printf("Value: %v\n", e.Value())
-			log.Printf("Param: %s\n", e.Param())
-			log.Printf("Error: %s\n", e.Error())
-			log.Printf("Namespace: %s\n", e.Namespace())
-			log.Printf("StructNamespace: %s\n", e.StructNamespace())
-			log.Printf("StructField: %s\n", e.StructField())
-			log.Printf("ActualTag: %s\n", e.ActualTag())
-			log.Printf("Kind: %v\n", e.Kind())
-			log.Printf("Type: %v\n", e.Type())
 
-			// Print all available methods using reflection
-			t := reflect.TypeOf(e)
-			log.Println("\nAvailable Methods:")
-			for i := 0; i < t.NumMethod(); i++ {
-				method := t.Method(i)
-				log.Printf("Method %d: %s\n", i, method.Name)
-			}
-
-			fieldName := e.Tag()
+			// fieldName := e.Field()
+			fieldName := getJSONFieldName(structType, e.Field())
 			location := getFieldLocation(c, fieldName)
 
 			// Create a custom error message based on the validation tag
@@ -88,12 +87,16 @@ func formatValidationErrors(c *gin.Context, err error) []ValidationError {
 				errorMsg = "This field is required"
 			case "url":
 				errorMsg = "Must be a valid URL"
+			case "alphanum":
+				errorMsg = "Must contain only alphanumeric characters"
 			case "min":
 				errorMsg = fmt.Sprintf("Must be at least %s characters long", e.Param())
 			case "max":
 				errorMsg = fmt.Sprintf("Must be at most %s characters long", e.Param())
-			case "oneof":
-				errorMsg = fmt.Sprintf("Must be one of: %s", e.Param())
+			case "gt":
+				errorMsg = fmt.Sprintf("Must be greater than %s", e.Param())
+			case "omitempty":
+				errorMsg = "Invalid value"
 			default:
 				errorMsg = fmt.Sprintf("Failed on the '%s' validation rule", e.Tag())
 			}
@@ -120,8 +123,8 @@ func formatValidationErrors(c *gin.Context, err error) []ValidationError {
 }
 
 // HandleValidationErrors processes validation errors and returns a formatted response
-func HandleValidationErrors(c *gin.Context, err error) {
-	validationErrors := formatValidationErrors(c, err)
+func HandleValidationErrors(c *gin.Context, err error, inputType interface{}) {
+	validationErrors := formatValidationErrors(c, err, inputType)
 	c.JSON(http.StatusBadRequest, gin.H{
 		"status": "error",
 		"errors": validationErrors,
