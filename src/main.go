@@ -33,15 +33,10 @@ func main() {
 		logger.Fatal("failed to connect to database", zap.Error(err))
 	}
 
-	baseTmpl, err = template.ParseFiles("src/templates/base.html")
-	if err != nil {
-		config.GetLogger().Fatal("failed to parse base template", zap.Error(err))
-	}
-
 	router.GET("/", func(c *gin.Context) {
-		tmpl, err := template.Must(baseTmpl.Clone()).ParseFiles("src/templates/index.html")
+		tmpl, err := template.ParseFiles("src/templates/base.html", "src/templates/index.html")
 		if err != nil {
-			logger.Error("failed to parse index template", zap.Error(err))
+			logger.Error("failed to parse templates", zap.Error(err))
 			c.String(http.StatusInternalServerError, "Error rendering page")
 			return
 		}
@@ -324,7 +319,7 @@ func main() {
 			return
 		}
 
-		tmpl, err := template.Must(baseTmpl.Clone()).ParseFiles("src/templates/visit_details.html")
+		tmpl, err := template.ParseFiles("src/templates/base.html", "src/templates/visit_details.html")
 		if err != nil {
 			logger.Error("failed to parse visit_details template", zap.Error(err))
 			c.String(http.StatusInternalServerError, "Error rendering page")
