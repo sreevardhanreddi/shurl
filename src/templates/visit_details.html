@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visit Details - Short URL Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: {
+              100: '#1a1a1a',
+              200: '#2d2d2d',
+              300: '#404040',
+            }
+          }
+        }
+      }
+    }
+
+    // Theme handling
+    function getSystemTheme() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    function setTheme(theme) {
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('themeIcon');
+      if (theme === 'dark') {
+        html.classList.add('dark');
+        themeIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        `;
+      } else {
+        html.classList.remove('dark');
+        themeIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        `;
+      }
+      localStorage.setItem('theme', theme);
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+    }
+
+    // Initialize theme
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme');
+      const systemTheme = getSystemTheme();
+      const initialTheme = savedTheme || systemTheme;
+      setTheme(initialTheme);
+    });
+  </script>
+  <style>
+    [x-cloak] {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-dark-100 text-gray-900 dark:text-gray-100 min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+      <div class="flex items-center space-x-4">
+        <a href="/" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </a>
+        <h1 class="text-3xl font-bold">Visit Details</h1>
+      </div>
+      <button onclick="toggleTheme()"
+        class="p-2 rounded-lg bg-gray-200 dark:bg-dark-200 hover:bg-gray-300 dark:hover:bg-dark-300 transition-colors">
+        <svg id="themeIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Link Information -->
+    <div class="bg-white dark:bg-dark-200 rounded-lg shadow-lg p-6 mb-8">
+      <h2 class="text-xl font-semibold mb-4">Link Information</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
+          <p class="text-gray-900 dark:text-gray-100" id="linkUrl"></p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Short Code</label>
+          <p class="text-gray-900 dark:text-gray-100" id="linkCode"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visits Table -->
+    <div class="bg-white dark:bg-dark-200 rounded-lg shadow-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-dark-300">
+            <tr>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                IP Address</th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                User Agent</th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Referrer</th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Visit Time</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white dark:bg-dark-200 divide-y divide-gray-200 dark:divide-gray-700">
+            {{ range .data }}
+            <tr class="hover:bg-gray-50 dark:hover:bg-dark-300">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900 dark:text-gray-100">{{ .IPAddress }}</div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm text-gray-900 dark:text-gray-100">{{ .UserAgent }}</div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="text-sm text-gray-900 dark:text-gray-100">
+                  {{ if .Referrer }}
+                  {{ .Referrer }}
+                  {{ else }}
+                  -
+                  {{ end }}
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900 dark:text-gray-100">{{ .CreatedAt.Format "2006-01-02 15:04:05" }}
+                </div>
+              </td>
+            </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Fetch link details
+    fetch(`/api/links/{{ .ID }}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          document.getElementById('linkUrl').textContent = data.data.url;
+          document.getElementById('linkCode').textContent = data.data.code;
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  </script>
+</body>
+
+</html>

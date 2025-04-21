@@ -1,7 +1,7 @@
 CREATE TABLE links (
     id SERIAL PRIMARY KEY,
     url VARCHAR(255) NOT NULL,
-    custom_alias VARCHAR(255),
+    code VARCHAR(255) UNIQUE NOT NULL, 
     expires_at TIMESTAMP,
     visits_count INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

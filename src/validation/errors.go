@@ -126,7 +126,8 @@ func formatValidationErrors(c *gin.Context, err error, inputType interface{}) []
 func HandleValidationErrors(c *gin.Context, err error, inputType interface{}) {
 	validationErrors := formatValidationErrors(c, err, inputType)
 	c.JSON(http.StatusBadRequest, gin.H{
-		"status": "error",
-		"errors": validationErrors,
+		"status":  "error",
+		"message": "validation failed",
+		"data":    validationErrors,
 	})
 }
