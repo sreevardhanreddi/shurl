@@ -20,8 +20,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var baseTmpl *template.Template
-
 func main() {
 	var err error
 
