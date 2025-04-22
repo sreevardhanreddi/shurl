@@ -6,25 +6,28 @@
 <!-- URL Shortener Form -->
 <div class="bg-white dark:bg-dark-200 rounded-lg shadow-lg p-6 mb-8">
   <h2 class="text-xl font-semibold mb-4">Create New Short URL</h2>
-  <form id="createLinkForm" class="space-y-4">
-    <div>
-      <label for="url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
-      <input type="url" id="url" name="url" required
-        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-300 dark:text-gray-100"
-        placeholder="https://example.com">
-    </div>
-    <div>
-      <label for="code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Custom Alias
-        (Optional)</label>
-      <input type="text" id="code" name="code"
-        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-300 dark:text-gray-100"
-        placeholder="custom-alias">
-    </div>
-    <div>
-      <label for="expires_at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expiration
-        Date (Optional)</label>
-      <input type="datetime-local" id="expires_at" name="expires_at"
-        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-300 dark:text-gray-100">
+  <form id="createLinkForm">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <div>
+        <label for="url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
+        <input type="url" id="url" name="url" required
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-300 dark:text-gray-100"
+          placeholder="https://example.com">
+      </div>
+      <div>
+        <label for="code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Custom Alias
+          (Optional)</label>
+        <input type="text" id="code" name="code"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-300 dark:text-gray-100"
+          placeholder="custom-alias">
+      </div>
+      <div>
+        <label for="expires_at" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expiration
+          Date (Optional)</label>
+        <input type="datetime-local" id="expires_at" name="expires_at" placeholder="One year from now"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-dark-300 dark:text-gray-100">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Default: 1 year from now</p>
+      </div>
     </div>
     <button type="submit"
       class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -95,11 +98,37 @@
 
 {{define "scripts"}}
 <script>
+  // Function to format numbers with thousands separators (like currency but without the symbol)
+  function formatNumber(number) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'decimal',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(number);
+  }
+
   // Function to format date/time
   function formatDateTime(isoString) {
     if (!isoString) return '-';
     try {
-      return new Date(isoString).toLocaleString();
+      const date = new Date(isoString);
+
+      // Format: DD/MM/YYYY, hh:mm:ss AM/PM
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+
+      // Get hours in 12-hour format
+      let hours = date.getHours();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+      const formattedHours = String(hours).padStart(2, '0');
+
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+
+      return `${day}/${month}/${year}, ${formattedHours}:${minutes}:${seconds} ${ampm}`;
     } catch (e) {
       return '-';
     }
@@ -135,7 +164,7 @@
                           </div>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
-                          <div class="text-sm text-gray-900 dark:text-gray-100">${link.visits_count || 0}</div>
+                          <div class="text-sm text-gray-900 dark:text-gray-100">${formatNumber(link.visits_count || 0)}</div>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
                           <div class="text-sm text-gray-900 dark:text-gray-100">${formatDateTime(link.created_at)}</div>
@@ -260,6 +289,25 @@
   document.body.addEventListener('linkDeleted', function () {
     // Table might be refreshed via direct DOM manipulation or could re-trigger load
     // htmx.trigger('tbody', 'load');
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    // Set default expiration date to 1 year from now
+    const expiresAtInput = document.getElementById('expires_at');
+    if (expiresAtInput) {
+      const oneYearFromNow = new Date();
+      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+      // Format for datetime-local input (YYYY-MM-DDThh:mm)
+      const year = oneYearFromNow.getFullYear();
+      const month = String(oneYearFromNow.getMonth() + 1).padStart(2, '0');
+      const day = String(oneYearFromNow.getDate()).padStart(2, '0');
+      const hours = String(oneYearFromNow.getHours()).padStart(2, '0');
+      const minutes = String(oneYearFromNow.getMinutes()).padStart(2, '0');
+
+      const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+      expiresAtInput.value = formattedDate;
+    }
   });
 
 </script>

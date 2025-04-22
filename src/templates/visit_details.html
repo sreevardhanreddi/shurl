@@ -8,19 +8,35 @@
 <!-- Link Information -->
 <div class="bg-white dark:bg-dark-200 rounded-lg shadow-lg p-6 mb-8">
   <h2 class="text-xl font-semibold mb-4">Link Information</h2>
-  <div class="space-y-4">
-    <div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-gray-50 dark:bg-dark-300 p-4 rounded-lg">
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
       <p class="text-gray-900 dark:text-gray-100 break-all" id="linkUrl">{{ .Link.URL }}</p>
     </div>
-    <div>
+    <div class="bg-gray-50 dark:bg-dark-300 p-4 rounded-lg">
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Short Code</label>
       <a href="/{{ .Link.Code }}" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline"
         id="linkCode">{{ .Link.Code }}</a>
     </div>
-    <div>
+    <div class="bg-gray-50 dark:bg-dark-300 p-4 rounded-lg">
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Visits</label>
-      <p class="text-gray-900 dark:text-gray-100">{{ len .Visits }}</p>
+      <p class="text-gray-900 dark:text-gray-100" id="visitCount" data-count="{{ .Link.VisitsCount }}">{{
+        .Link.VisitsCount }}</p>
+    </div>
+    <div class="bg-gray-50 dark:bg-dark-300 p-4 rounded-lg">
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expires At</label>
+      <p class="text-gray-900 dark:text-gray-100" id="expiresAt">
+        {{ if eq .Link.ExpiresAt nil }}
+        <span class="text-gray-500 dark:text-gray-400">Never expires</span>
+        {{ else }}
+        {{ .Link.ExpiresAt.Format "02/01/2006, 03:04:05 PM" }}
+        {{ end }}
+      </p>
+    </div>
+    <div class="bg-gray-50 dark:bg-dark-300 p-4 rounded-lg">
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Created At</label>
+      <p class="text-gray-900 dark:text-gray-100" id="createdAt">{{
+        .Link.CreatedAt.Format "02/01/2006, 03:04:05 PM" }}</p>
     </div>
   </div>
 </div>
@@ -50,8 +66,12 @@
             <div class="text-sm text-gray-900 dark:text-gray-100">{{ .IPAddress }}</div>
           </td>
           <td class="px-6 py-4">
-            <div class="text-sm text-gray-900 dark:text-gray-100 truncate max-w-md" title="{{ .UserAgent }}">{{
-              .UserAgent }}</div>
+            <div class="ua-container" data-ua="{{ .UserAgent }}">
+              <div class="flex flex-wrap gap-2 mb-1 ua-tags"></div>
+              <div class="text-sm text-gray-900 dark:text-gray-100 truncate max-w-md" title="{{ .UserAgent }}">
+                {{ .UserAgent }}
+              </div>
+            </div>
           </td>
           <td class="px-6 py-4">
             <div class="text-sm text-gray-900 dark:text-gray-100 truncate max-w-xs" title="{{ .Referrer }}">
@@ -63,7 +83,7 @@
             </div>
           </td>
           <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm text-gray-900 dark:text-gray-100">{{ .CreatedAt.Format "2006-01-02 15:04:05 MST" }}
+            <div class="text-sm text-gray-900 dark:text-gray-100">{{ .CreatedAt.Format "02/01/2006, 03:04:05 PM" }}
             </div>
           </td>
         </tr>
@@ -79,12 +99,67 @@
 </div>
 {{end}}
 
-{{/* No page-specific scripts needed for this static page, remove block if empty */}}
-{{/*
 {{define "scripts"}}
 <script>
-  // Example: If you needed JS specific to this page
-  console.log("Visit details page loaded for link ID: {{ .Link.ID }}");
+  document.addEventListener('DOMContentLoaded', function () {
+    // Parse all user agent strings
+    const uaContainers = document.querySelectorAll('.ua-container');
+
+    uaContainers.forEach(container => {
+      const uaString = container.dataset.ua;
+      const tagsContainer = container.querySelector('.ua-tags');
+
+      if (uaString && tagsContainer) {
+        const parser = new UAParser(uaString);
+        const result = parser.getResult();
+
+        // Create browser tag
+        if (result.browser && result.browser.name) {
+          const browserTag = document.createElement('span');
+          let browserText = result.browser.name;
+          if (result.browser.version) {
+            browserText += ' ' + result.browser.version.split('.')[0]; // Just major version
+          }
+          browserTag.textContent = browserText;
+          browserTag.className = 'px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+          tagsContainer.appendChild(browserTag);
+        }
+
+        // Create OS tag
+        if (result.os && result.os.name) {
+          const osTag = document.createElement('span');
+          osTag.textContent = result.os.name + (result.os.version ? ' ' + result.os.version : '');
+          osTag.className = 'px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+          tagsContainer.appendChild(osTag);
+        }
+
+        // Create device tag
+        if (result.device && result.device.model) {
+          const deviceTag = document.createElement('span');
+          deviceTag.textContent = result.device.vendor ? `${result.device.vendor} ${result.device.model}` : result.device.model;
+          deviceTag.className = 'px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+          tagsContainer.appendChild(deviceTag);
+        } else if (result.device && result.device.type) {
+          const deviceTag = document.createElement('span');
+          deviceTag.textContent = result.device.type.charAt(0).toUpperCase() + result.device.type.slice(1);
+          deviceTag.className = 'px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+          tagsContainer.appendChild(deviceTag);
+        }
+      }
+    });
+
+    // Format visit count with number formatting
+    const visitCountElement = document.getElementById('visitCount');
+    if (visitCountElement) {
+      const count = parseInt(visitCountElement.dataset.count, 10);
+      if (!isNaN(count)) {
+        const formatter = new Intl.NumberFormat('en-US', {
+          style: 'decimal',
+          maximumFractionDigits: 0
+        });
+        visitCountElement.textContent = formatter.format(count);
+      }
+    }
+  });
 </script>
 {{end}}
-*/}}

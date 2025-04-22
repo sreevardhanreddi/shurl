@@ -283,7 +283,7 @@ func main() {
 		}
 
 		var link models.Link
-		err = db.QueryRow("SELECT id, url, code FROM links WHERE id = $1", idInt).Scan(&link.ID, &link.URL, &link.Code)
+		err = db.QueryRow("SELECT id, url, code, visits_count, created_at, updated_at, expires_at FROM links WHERE id = $1", idInt).Scan(&link.ID, &link.URL, &link.Code, &link.VisitsCount, &link.CreatedAt, &link.UpdatedAt, &link.ExpiresAt)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				logger.Warn("link not found for visit details", zap.Int("id", idInt))
