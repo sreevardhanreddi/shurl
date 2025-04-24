@@ -7,7 +7,7 @@ import (
 type InputUrl struct {
 	URL         string     `json:"url" binding:"required,url"`
 	CustomAlias string     `json:"code" binding:"omitempty,alphanum,min=3,max=6"`
-	ExpiresAt   *time.Time `json:"expires_at" binding:"omitempty,gt=now"`
+	ExpiresAt   *time.Time `json:"expires_at" binding:"omitempty"`
 }
 
 type Link struct {

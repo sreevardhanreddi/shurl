@@ -6,6 +6,7 @@ import (
 	"shurl/src/models"
 	"shurl/src/validation"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -23,6 +24,24 @@ func HandleGenerateLink(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 		logger.Info("inputUrl bound")
+
+		// Manual validation for expires_at
+		if inputUrl.ExpiresAt != nil {
+			if inputUrl.ExpiresAt.Before(time.Now()) || inputUrl.ExpiresAt.Equal(time.Now()) {
+				logger.Error("expires_at must be in the future")
+				c.JSON(http.StatusBadRequest, gin.H{
+					"status":  "error",
+					"message": "Expiration date/time must be in the future",
+					"data": []gin.H{{
+						"field":    "expires_at",
+						"message":  "Expiration date/time must be in the future",
+						"location": "body",
+						"value":    inputUrl.ExpiresAt,
+					}},
+				})
+				return
+			}
+		}
 
 		customAlias := inputUrl.CustomAlias
 		if customAlias != "" {
