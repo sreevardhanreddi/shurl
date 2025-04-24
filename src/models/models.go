@@ -6,7 +6,7 @@ import (
 
 type InputUrl struct {
 	URL         string     `json:"url" binding:"required,url"`
-	CustomAlias string     `json:"custom_alias" binding:"omitempty,alphanum,min=3,max=6"`
+	CustomAlias string     `json:"code" binding:"omitempty,alphanum,min=3,max=6"`
 	ExpiresAt   *time.Time `json:"expires_at" binding:"omitempty,gt=now"`
 }
 
