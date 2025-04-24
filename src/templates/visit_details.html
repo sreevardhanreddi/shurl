@@ -25,7 +25,12 @@
     </div>
     <div class="bg-gray-50 dark:bg-dark-300 p-4 rounded-lg">
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expires At</label>
-      <p class="text-gray-900 dark:text-gray-100" id="expiresAt">
+      <p class="text-gray-900 dark:text-gray-100 time" id="expiresAt" data-iso='
+        {{ if eq .Link.ExpiresAt nil }}
+        {{ else }}
+        {{ .Link.ExpiresAt.Format "2006-01-02T15:04:05Z07:00" }}
+        {{ end }}
+        '>
         {{ if eq .Link.ExpiresAt nil }}
         <span class="text-gray-500 dark:text-gray-400">Never expires</span>
         {{ else }}
@@ -35,8 +40,9 @@
     </div>
     <div class="bg-gray-50 dark:bg-dark-300 p-4 rounded-lg">
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Created At</label>
-      <p class="text-gray-900 dark:text-gray-100" id="createdAt">{{
-        .Link.CreatedAt.Format "02/01/2006, 03:04:05 PM" }}</p>
+      <p class="text-gray-900 dark:text-gray-100 time" id="createdAt"
+        data-iso='{{ .Link.CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}'>
+      </p>
     </div>
   </div>
 </div>
@@ -83,7 +89,9 @@
             </div>
           </td>
           <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm text-gray-900 dark:text-gray-100">{{ .CreatedAt.Format "02/01/2006, 03:04:05 PM" }}
+            <div class="text-sm text-gray-900 dark:text-gray-100 visit-time time"
+              data-iso='{{ .CreatedAt.Format "2006-01-02T15:04:05Z07:00" }}'>
+              <!-- Will be filled by JS -->
             </div>
           </td>
         </tr>
@@ -163,6 +171,11 @@
         visitCountElement.textContent = formatter.format(count);
       }
     }
+
+    // Convert visit times to local timezone
+    formatAllTimes();
   });
+
+
 </script>
 {{end}}
