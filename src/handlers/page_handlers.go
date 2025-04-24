@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"html/template"
 	"net/http"
 	"shurl/src/models"
@@ -29,7 +30,7 @@ func HandleIndex(c *gin.Context) {
 	}
 
 	err = tmpl.ExecuteTemplate(c.Writer, "base", gin.H{
-		"Title":          "Short URL Manager",
+		"Title":          "Shurl - Short URL Manager",
 		"ShowBackButton": false,
 	})
 	if err != nil {
@@ -95,7 +96,7 @@ func HandleVisitDetails(db *sql.DB) gin.HandlerFunc {
 		}
 
 		err = tmpl.ExecuteTemplate(c.Writer, "base", gin.H{
-			"Title":          "Visit Details",
+			"Title":          fmt.Sprintf("Visit Details for - %s", link.URL),
 			"ShowBackButton": true,
 			"Visits":         visits,
 			"Link":           link,
