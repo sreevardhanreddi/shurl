@@ -36,8 +36,8 @@ This application uses environment variables for configuration. You need to creat
 ```
 POSTGRES_URI=postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable
 PORT=8080
-APP_USERNAME=admin
-APP_PASSWORD=admin
+BASIC_AUTH_USERNAME=admin
+BASIC_AUTH_PASSWORD=admin
 ```
 
 ## Quick Start
@@ -72,23 +72,6 @@ APP_PASSWORD=admin
    ```bash
    docker compose -f docker-compose.prod.yml --profile tools run db-migrate
    ```
-
-## Available Make Commands
-
-```
-make dev        - Run the application in development mode with hot reload
-make run        - Run the application
-make build      - Build the application
-make clean      - Clean build artifacts
-make test       - Run tests
-make lint       - Run linter
-make fmt        - Format code
-make docker-dev - Start development environment
-make docker-prod - Start production environment
-make migrate-up - Run database migrations up
-make migrate-down - Rollback last migration
-make migrate-create - Create new migration
-```
 
 ## API Documentation
 
