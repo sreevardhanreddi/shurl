@@ -24,6 +24,10 @@ A modern, high-performance URL shortening service built with Go.
 - Make (for convenient command execution)
 - Go 1.23 (for local development)
 
+## UI
+
+![Web UI](./page.png)
+
 ## Environment Configuration
 
 This application uses environment variables for configuration. You need to create a `.env` file based on the `.env.example` template:
